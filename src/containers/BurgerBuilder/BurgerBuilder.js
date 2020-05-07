@@ -84,7 +84,6 @@ class BurferBuilder extends Component {
     }
 
     render () {
-        console.log(this.state.purchasable)
         const disabledInfo = {
             ...this.state.ingredients
         }

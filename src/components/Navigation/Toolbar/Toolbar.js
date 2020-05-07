@@ -4,7 +4,13 @@ import Logo from '../../Logo/Logo'
 import NavigationItems from '../Navigationitems/NavigationItems'
 const toolbar = (porps) => (
     <header className={classes.Toolbar}>
-        <div>Menu</div>
+        <div className={classes.MobileOnly} onClick={porps.ShowSideMenu}>
+            <div className={classes.DrawerToggle}></div>
+            <div></div>
+            <div className={classes.DrawerToggle}></div>
+            <div></div>
+            <div className={classes.DrawerToggle}></div>
+        </div>
         <Logo height='80%'/>
         <nav className={classes.DesktopOnly}>
         <NavigationItems />
