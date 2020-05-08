@@ -4,6 +4,9 @@ import Burger from '../../components/Burger/Burger'
 import BuildControls from '../../components/Burger/BuildControls/BuildControls'
 import Modal from '../../components/UI/Modal/Modal'
 import OrderSummary from '../../components/Burger/OrderSummary/OrderSummary'
+import axios from '../../axios-order'
+import Spinner from '../../components/UI/Spinner/Spinner'
+import withErrorHandler from '../../hoc/withErrorHandler/withErrorHandler'
 
 const INGREDIENT_PRICES = {
     salad: 0.5,
@@ -12,21 +15,31 @@ const INGREDIENT_PRICES = {
     bacon: 0.7
 }
 
-class BurferBuilder extends Component {
+class BurgerBuilder extends Component {
     constructor(props){
         super(props);
         this.state = {
-            ingredients: {
-                salad:0,
-                bacon:0,
-                cheese:0,
-                meat:0
-            },
+            ingredients: null,
             totalPrice: 4.00,
             purchasable:true,
-            purchasing:false
+            purchasing:false,
+            loading: false,
         }
     }
+
+    componentDidMount() {
+        axios.get('/ingredients.json')
+        .then(response => {
+            this.setState({ingredients: response.data})
+
+        })
+        .catch(error=>{
+            
+            console.log("Data ERROR NOT added::",error)
+        })
+    }
+
+
 
     updatePurchaseState(updatedIngredients) {
         const values=Object.values(updatedIngredients)
@@ -76,12 +89,37 @@ class BurferBuilder extends Component {
     }
 
     purchaseContinue= () => {
-        alert("You selected to continue the purchase")
+        //alert("You selected to continue the purchase")
+        this.setState({loading: true})
+        const order = {
+            ingredients: this.state.ingredients,
+            price: this.state.totalPrice,
+            customer: {
+                name: 'Akshay Kumar',
+                street: '1333 South Park Street',
+                zipCode: 'B3J2K9',
+                country: 'Canada'
+            },
+            delivery: 'Fastest'
+        }
+        axios.post('/orders.json',order)
+        .then(response => {
+            this.setState({loading: true,purchasing: false})
+            console.log("Data added::",response)
+        })
+        .catch(error=>{
+            this.setState({loading: true,purchasing: false})
+            console.log("Data ERROR NOT added::",error)
+        })
     }
 
     purchaseCancel= () => {
         this.setState({purchasing: false})
     }
+
+    
+
+
 
     render () {
         const disabledInfo = {
@@ -90,26 +128,42 @@ class BurferBuilder extends Component {
         for (let key in disabledInfo) {
             disabledInfo[key] = disabledInfo[key] <= 0
         }
+
+
+        let orderSummary = null 
+        let burger = <Spinner />;
+
+        if (this.state.ingredients) {
+            burger = (<Aux><Burger ingredients={this.state.ingredients}/>
+            <BuildControls purchasable={this.state.purchasable} 
+                           totalPrice={this.state.totalPrice} 
+                           disabled={disabledInfo} 
+                           ingredientsAdded={this.addIngredientHandler} 
+                           ingredientsRemoved={this.removeIngredientHandler}
+                           showSummary={this.purchaseHnadler}/></Aux>)
+            orderSummary = <OrderSummary ingredients={this.state.ingredients}
+                           modalClosed={this.purchaseCancel}
+                           modalPuchase={this.purchaseContinue}
+                           totalPrice={this.state.totalPrice}/>
+        }
+        
+        if (this.state.loading){
+            orderSummary= <Spinner />;
+        }
+        
+        
+
         return (
             <Aux>
                 <Modal show={this.state.purchasing}>
-                    <OrderSummary ingredients={this.state.ingredients}
-                    modalClosed={this.purchaseCancel}
-                    modalPuchase={this.purchaseContinue}
-                    totalPrice={this.state.totalPrice}/>
+                    {orderSummary}
                 </Modal>
-                <Burger ingredients={this.state.ingredients}/>
-                
-                <BuildControls purchasable={this.state.purchasable} 
-                               totalPrice={this.state.totalPrice} 
-                               disabled={disabledInfo} 
-                               ingredientsAdded={this.addIngredientHandler} 
-                               ingredientsRemoved={this.removeIngredientHandler}
-                               showSummary={this.purchaseHnadler}/>
+                {burger}
             </Aux>
         );
     }
 
 }
 
-export default BurferBuilder;
+export default withErrorHandler(BurgerBuilder,axios);
+// export default BurgerBuilder;
